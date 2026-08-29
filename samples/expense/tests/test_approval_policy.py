@@ -23,8 +23,14 @@ def test_very_large_amounts_need_three_approvals():
     assert approval_policy.required_steps(config.THREE_STEP_THRESHOLD) == 2
 
 
-def test_each_step_maps_to_a_role():
-    assert approval_policy.role_for_step(1) == "manager"
+def test_the_first_step_is_decided_by_the_reporting_line():
+    assert approval_policy.resolved_by_reporting_line(1)
+    assert not approval_policy.resolved_by_reporting_line(2)
+    with pytest.raises(ValueError):
+        approval_policy.role_for_step(1)
+
+
+def test_later_steps_map_to_a_role():
     assert approval_policy.role_for_step(2) == "finance"
     assert approval_policy.role_for_step(3) == "admin"
     with pytest.raises(ValueError):

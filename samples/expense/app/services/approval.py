@@ -56,7 +56,11 @@ def can_act_on(
     step = next_step(conn, expense["id"])
     if step > approval_policy.required_steps(amount_of(expense)):
         return False
-    return approver["role"] == approval_policy.role_for_step(step)
+    try:
+        _authorize(conn, expense, approver["id"], step)
+    except ApprovalError:
+        return False
+    return True
 
 
 def approve(
@@ -75,7 +79,7 @@ def approve(
     required = approval_policy.required_steps(amount_of(expense))
     if step > required:
         raise ApprovalError("この申請の承認はすでに完了しています")
-    _authorize(conn, approver_id, step)
+    _authorize(conn, expense, approver_id, step)
 
     next_status = (
         state_machine.APPROVED if step == required else state_machine.PARTIALLY_APPROVED
@@ -104,7 +108,7 @@ def reject(
         # 終了済みの申請への却下も状態遷移として弾く
         state_machine.transition(expense["status"], state_machine.REJECTED)
     step = next_step(conn, expense_id)
-    _authorize(conn, approver_id, step)
+    _authorize(conn, expense, approver_id, step)
     return _decide(
         conn,
         expense=expense,
@@ -123,15 +127,28 @@ def _load(conn: sqlite3.Connection, expense_id: int) -> sqlite3.Row:
     return expense
 
 
-def _authorize(conn: sqlite3.Connection, approver_id: int, step: int) -> None:
+def _authorize(
+    conn: sqlite3.Connection, expense: sqlite3.Row, approver_id: int, step: int
+) -> None:
     """その段を承認できる立場かを確かめる。
 
     ルータの require_role は「承認者の集合に属するか」までしか見ない。何段目を
-    誰が承認できるかはここで判定する。
+    誰が承認できるかはここで判定する。can_act_on() も同じ関数を通すので、画面に
+    出る操作と実際に通る操作がずれない。
     """
     approver = users.get(conn, approver_id)
     if approver is None:
         raise ApprovalError("承認者が見つかりません")
+
+    if approver_id == expense["submitter_id"]:
+        raise ApprovalError("自分の申請は承認できません")
+
+    if approval_policy.resolved_by_reporting_line(step):
+        manager = users.manager_of(conn, expense["submitter_id"])
+        if manager is None or manager["id"] != approver_id:
+            raise ApprovalError("一次承認は申請者の上長が行います")
+        return
+
     if approver["role"] != approval_policy.role_for_step(step):
         raise ApprovalError(
             f"{approval_policy.label_for_step(step)}承認は "

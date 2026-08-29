@@ -19,9 +19,8 @@ def notify_all_approvers(
 
     通知した相手の user id を返す。
     """
-    try:
-        role = approval_policy.role_for_step(step)
-    except ValueError:
+    candidates = _candidates(conn, expense, step)
+    if not candidates:
         return []
 
     amount = Money(expense["amount_minor"], expense["currency"])
@@ -31,7 +30,7 @@ def notify_all_approvers(
     )
 
     notified: list[int] = []
-    for candidate in users.list_by_role(conn, role):
+    for candidate in candidates:
         if candidate["id"] == expense["submitter_id"]:
             continue
         notifications.create(
@@ -43,6 +42,19 @@ def notify_all_approvers(
         notified.append(candidate["id"])
         break
     return notified
+
+
+def _candidates(
+    conn: sqlite3.Connection, expense: sqlite3.Row, step: int
+) -> list[sqlite3.Row]:
+    if approval_policy.resolved_by_reporting_line(step):
+        manager = users.manager_of(conn, expense["submitter_id"])
+        return [manager] if manager is not None else []
+    try:
+        role = approval_policy.role_for_step(step)
+    except ValueError:
+        return []
+    return users.list_by_role(conn, role)
 
 
 def notify_submitter(

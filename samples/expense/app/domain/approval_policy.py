@@ -10,9 +10,9 @@ from __future__ import annotations
 from app import config
 from app.money import Money
 
-# 段目 -> その段を承認するロール
+# 段目 -> その段を承認するロール。
+# 一次だけはロールではなく申請者の上長という関係で決まるので、ここには載せない。
 STEP_ROLES: dict[int, str] = {
-    1: "manager",
     2: "finance",
     3: "admin",
 }
@@ -33,8 +33,13 @@ def required_steps(amount: Money) -> int:
     return 1
 
 
+def resolved_by_reporting_line(step: int) -> bool:
+    """その段の承認者が、ロールではなく上長関係で決まるか。"""
+    return step == 1
+
+
 def role_for_step(step: int) -> str:
-    """指定の段を承認できるロールを返す。"""
+    """指定の段を承認できるロールを返す。一次承認には使えない。"""
     if step not in STEP_ROLES:
         raise ValueError(f"存在しない承認段です: {step}")
     return STEP_ROLES[step]
