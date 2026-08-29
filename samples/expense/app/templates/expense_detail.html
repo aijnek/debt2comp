@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}申請 #{{ expense['id'] }}{% endblock %}
+{% block content %}
+<h1>申請 #{{ expense['id'] }}</h1>
+<dl class="card">
+  <dt>申請者</dt><dd>{{ expense['submitter_name'] }}（{{ expense['submitter_department'] }}）</dd>
+  <dt>金額</dt><dd>{{ money(expense['amount_minor'], expense['currency']).format() }}</dd>
+  <dt>費目</dt><dd>{{ expense['category'] }}</dd>
+  <dt>用途</dt><dd>{{ expense['description'] }}</dd>
+  <dt>発生日</dt><dd>{{ expense['incurred_on'] }}</dd>
+  <dt>状態</dt><dd><span class="status {{ expense['status'] }}">{{ expense['status'] }}</span></dd>
+</dl>
+
+{% block actions %}{% endblock %}
+
+<h2>承認</h2>
+{% if approvals %}
+<ol class="steps">
+  {% for a in approvals %}
+  <li>{{ a['step'] }}段目 — {{ a['approver_name'] }}: {{ a['decision'] }}
+    {% if a['comment'] %}<span class="comment">「{{ a['comment'] }}」</span>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="empty">まだ承認されていません。</p>
+{% endif %}
+
+<h2>履歴</h2>
+<ul class="history">
+  {% for h in history %}
+  <li><time>{{ h['created_at'] }}</time> {{ h['actor_name'] }} — {{ h['action'] }}
+    {% if h['detail'] %}<span class="detail">{{ h['detail'] }}</span>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}自分の申請{% endblock %}
+{% block content %}
+<h1>自分の申請</h1>
+{% if expenses %}
+<table>
+  <thead>
+    <tr><th>#</th><th>発生日</th><th>費目</th><th>用途</th><th class="num">金額</th><th>状態</th></tr>
+  </thead>
+  <tbody>
+    {% for e in expenses %}
+    <tr>
+      <td><a href="/expenses/{{ e['id'] }}">{{ e['id'] }}</a></td>
+      <td>{{ e['incurred_on'] }}</td>
+      <td>{{ e['category'] }}</td>
+      <td>{{ e['description'] }}</td>
+      <td class="num">{{ money(e['amount_minor'], e['currency']).format() }}</td>
+      <td><span class="status {{ e['status'] }}">{{ e['status'] }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">まだ申請がありません。</p>
+{% endif %}
+{% endblock %}

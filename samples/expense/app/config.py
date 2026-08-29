@@ -1,0 +1,14 @@
+"""申請の受付ルール。
+
+金額のしきい値や上限はコードに置き、DB に持たない。理由は docs/adr/0001 を参照。
+"""
+
+from app.money import Money
+
+# これを超える金額は経費精算では受け付けず、購買申請に回してもらう
+MAX_EXPENSE = Money(1_000_000)
+
+# 発生日がこれより古い申請は受け付けない（決算をまたぐ遡及を防ぐ）
+MAX_BACKDATE_DAYS = 90
+
+CATEGORIES = ("transport", "lodging", "meals", "supplies", "other")

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}新規申請{% endblock %}
+{% block content %}
+<h1>新規申請</h1>
+<form method="post" action="/expenses" class="card">
+  <label>金額（円）
+    <input name="amount" inputmode="numeric" value="{{ form.amount if form else '' }}" required>
+  </label>
+  <label>費目
+    <select name="category">
+      {% for c in categories %}
+      <option value="{{ c }}" {% if form and form.category == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>発生日
+    <input name="incurred_on" type="date" value="{{ form.incurred_on if form else '' }}" required>
+  </label>
+  <label>用途
+    <input name="description" value="{{ form.description if form else '' }}" required>
+  </label>
+  <button type="submit">申請する</button>
+</form>
+{% endblock %}

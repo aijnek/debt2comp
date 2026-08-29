@@ -1,0 +1,42 @@
+:root {
+  --bg: #f6f7f8;
+  --surface: #fff;
+  --ink: #1b1f22;
+  --muted: #6b7780;
+  --rule: #dde2e5;
+  --accent: #17635c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.7 system-ui, "Hiragino Sans", sans-serif; }
+.bar { display: flex; gap: 1.5rem; align-items: center; padding: .75rem 1.5rem;
+  background: var(--surface); border-bottom: 1px solid var(--rule); }
+.brand { font-weight: 700; text-decoration: none; color: var(--accent); }
+nav { display: flex; gap: 1rem; }
+nav a { color: var(--ink); text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+.whoami { margin-left: auto; }
+main { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+h1 { font-size: 1.5rem; margin: 0 0 1.25rem; }
+h2 { font-size: 1.1rem; margin: 2rem 0 .75rem; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+th, td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--rule); }
+th { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.card { background: var(--surface); border: 1px solid var(--rule); padding: 1.25rem;
+  display: flex; flex-direction: column; gap: .75rem; }
+dl.card { display: grid; grid-template-columns: 7rem 1fr; gap: .4rem 1rem; }
+dt { color: var(--muted); font-size: .85rem; }
+dd { margin: 0; }
+label { display: flex; flex-direction: column; gap: .3rem; font-size: .85rem; color: var(--muted); }
+input, select { font: inherit; padding: .4rem .5rem; border: 1px solid var(--rule); border-radius: 3px; }
+button { font: inherit; align-self: flex-start; padding: .45rem 1.1rem; border: 0;
+  border-radius: 3px; background: var(--accent); color: #fff; cursor: pointer; }
+.status { font-size: .78rem; padding: .1rem .5rem; border-radius: 2px; background: #e7ebee; }
+.status.approved { background: #d8ece7; }
+.status.paid { background: #cfe4f5; }
+.status.rejected { background: #f3ded9; }
+.error { background: #f3ded9; border-left: 3px solid #9c3b2c; padding: .6rem .9rem; }
+.empty, .muted { color: var(--muted); }
+.steps, .history { padding-left: 1.2rem; }
+.comment, .detail { color: var(--muted); }
