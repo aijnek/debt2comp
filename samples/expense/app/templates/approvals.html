@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}承認待ち{% endblock %}
+{% block content %}
+<h1>承認待ち</h1>
+{% if expenses %}
+<table>
+  <thead>
+    <tr><th>#</th><th>申請者</th><th>発生日</th><th>費目</th><th>用途</th><th class="num">金額</th></tr>
+  </thead>
+  <tbody>
+    {% for e in expenses %}
+    <tr>
+      <td><a href="/expenses/{{ e['id'] }}">{{ e['id'] }}</a></td>
+      <td>{{ e['submitter_name'] }}</td>
+      <td>{{ e['incurred_on'] }}</td>
+      <td>{{ e['category'] }}</td>
+      <td>{{ e['description'] }}</td>
+      <td class="num">{{ money(e['amount_minor'], e['currency']).format() }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">承認待ちの申請はありません。</p>
+{% endif %}
+{% endblock %}

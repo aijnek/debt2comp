@@ -40,3 +40,5 @@ button { font: inherit; align-self: flex-start; padding: .45rem 1.1rem; border: 
 .empty, .muted { color: var(--muted); }
 .steps, .history { padding-left: 1.2rem; }
 .comment, .detail { color: var(--muted); }
+.row { display: flex; gap: .6rem; }
+button.danger { background: #9c3b2c; }

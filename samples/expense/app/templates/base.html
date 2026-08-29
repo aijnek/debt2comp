@@ -11,6 +11,9 @@
     <a class="brand" href="/">経費精算</a>
     <nav>
       <a href="/expenses/new">新規申請</a>
+      {% if current_user["role"] in ("manager", "finance", "admin") %}
+      <a href="/approvals">承認待ち</a>
+      {% endif %}
       {% block nav %}{% endblock %}
     </nav>
     <form class="whoami" method="post" action="/session/user">

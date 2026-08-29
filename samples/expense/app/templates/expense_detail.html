@@ -11,7 +11,15 @@
   <dt>状態</dt><dd><span class="status {{ expense['status'] }}">{{ expense['status'] }}</span></dd>
 </dl>
 
-{% block actions %}{% endblock %}
+{% if can_approve %}
+<form class="card" method="post" action="/expenses/{{ expense['id'] }}/approve">
+  <label>コメント<input name="comment"></label>
+  <div class="row">
+    <button type="submit">承認する</button>
+    <button type="submit" class="danger" formaction="/expenses/{{ expense['id'] }}/reject">却下する</button>
+  </div>
+</form>
+{% endif %}
 
 <h2>承認</h2>
 {% if approvals %}
