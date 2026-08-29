@@ -15,6 +15,11 @@ import audit_routes  # noqa: E402
 import audit_status_writes  # noqa: E402
 
 
+def test_the_route_audit_actually_sees_the_routes():
+    # 検査が空振りしていると「違反ゼロ」と見分けがつかない。
+    assert len(audit_routes.iter_api_routes(audit_routes.app.routes)) > 10
+
+
 def test_every_route_goes_through_require_role():
     assert audit_routes.unguarded_routes() == []
 

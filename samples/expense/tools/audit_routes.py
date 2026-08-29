@@ -21,6 +21,29 @@ from fastapi.routing import APIRoute  # noqa: E402
 from app.main import app  # noqa: E402
 
 
+class AuditError(Exception):
+    """検査そのものが成立しなかったときに投げる。"""
+
+
+def iter_api_routes(routes) -> list[APIRoute]:
+    """登録済みの APIRoute を全て集める。
+
+    include_router() で足したルータは app.routes の中で包まれており、
+    APIRoute として直接は出てこない。包みを開いて辿る。
+    """
+    found: list[APIRoute] = []
+    for route in routes:
+        if isinstance(route, APIRoute):
+            found.append(route)
+            continue
+        included = getattr(route, "original_router", None)
+        if included is not None:
+            found.extend(iter_api_routes(included.routes))
+        elif hasattr(route, "routes"):
+            found.extend(iter_api_routes(route.routes))
+    return found
+
+
 def _guards_in(dependant) -> bool:
     if getattr(dependant.call, "__is_role_guard__", False):
         return True
@@ -28,10 +51,14 @@ def _guards_in(dependant) -> bool:
 
 
 def unguarded_routes() -> list[str]:
+    routes = iter_api_routes(app.routes)
+    if not routes:
+        # 1本も見つからないのは「違反ゼロ」ではなく、検査が空振りしている。
+        # 黙って 0 件を返すと、この検査は何も守らないまま通り続ける。
+        raise AuditError("ルートが1本も見つからない。検査が成立していない")
+
     offenders = []
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
-            continue
+    for route in routes:
         if not _guards_in(route.dependant):
             methods = ",".join(sorted(route.methods or []))
             offenders.append(f"{methods} {route.path} -> {route.endpoint.__qualname__}")
