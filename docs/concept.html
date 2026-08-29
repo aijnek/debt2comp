@@ -216,7 +216,10 @@
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    flex-wrap: wrap;
   }
+
+  .claim-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 
   .claim-body {
     font-size: 1.05rem;
@@ -265,12 +268,19 @@
   .chip.recorded { background: var(--accent-wash); color: var(--accent-2); }
   .chip.inferred { background: var(--warn-wash); color: var(--warn); }
   .chip.unknown  { background: var(--surface-2); color: var(--muted); }
+  .chip.verified { background: var(--accent-wash); color: var(--accent-2); }
+  .chip.asserted { background: var(--warn-wash); color: var(--warn); }
+  .chip.type     { background: var(--surface-2); color: var(--ink-2); }
 
   :root[data-theme="dark"] .chip.recorded,
-  :root[data-theme="dark"] .chip.inferred { color: var(--ink); }
+  :root[data-theme="dark"] .chip.inferred,
+  :root[data-theme="dark"] .chip.verified,
+  :root[data-theme="dark"] .chip.asserted { color: var(--ink); }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .chip.recorded,
-    :root:not([data-theme="light"]) .chip.inferred { color: var(--ink); }
+    :root:not([data-theme="light"]) .chip.inferred,
+    :root:not([data-theme="light"]) .chip.verified,
+    :root:not([data-theme="light"]) .chip.asserted { color: var(--ink); }
   }
 
   .doubt-btn {
@@ -284,7 +294,7 @@
     align-self: flex-start;
   }
 
-  /* ---------- two-layer diagram ---------- */
+  /* ---------- grid diagrams ---------- */
 
   .layers {
     display: grid;
@@ -323,6 +333,33 @@
     font-size: 0.88rem; color: var(--ink-2);
     line-height: 1.75;
   }
+
+  .surfaces {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    max-width: var(--wide);
+  }
+  @media (max-width: 40rem) { .surfaces { grid-template-columns: 1fr; } }
+
+  .surface-card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent);
+    padding: 1.35rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .surface-num {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .surface-title { font-weight: 700; font-size: 1rem; }
+  .surface-desc { font-size: 0.9rem; color: var(--ink-2); }
 
   /* ---------- flow ---------- */
 
@@ -394,6 +431,12 @@
   tbody td:first-child { font-weight: 700; white-space: nowrap; }
   td.q { color: var(--ink); font-weight: 500; }
   td.a { color: var(--ink-2); }
+  td.delta {
+    color: var(--muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    font-family: var(--f-mono);
+  }
 
   /* ---------- risk list ---------- */
 
@@ -441,12 +484,13 @@
 <div class="wrap">
 
   <header class="mast">
-    <div class="eyebrow">debt2comp — concept</div>
+    <div class="eyebrow">debt2comp — concept v2</div>
     <h1>理解負債の返済設計</h1>
     <div class="mast-rule"></div>
     <p class="lede">
-      AIがコードを書き、人間が上流設計とハーネスに回ると、動いているシステムに対する理解だけが取り残される。
-      これを「読み物を配って終わり」にせず、<strong>検証可能な主張（claim）を単位として、抽出・学習・出題・記録・訂正を一つの環に閉じる</strong>ための設計メモ。
+      AIがコードを書き、自分が上流設計とハーネスに回ると、動いているシステムに対する理解だけが取り残される。
+      これを「読み物を配って終わり」にせず、<strong>検証可能な主張（claim）を単位として、抽出・検証・学習・出題・記録を一つの環に閉じる</strong>ための設計メモ。
+      まず自分一人の理解負債を返す道具として作り、チーム共有は将来の拡張として線だけ引いておく。
     </p>
   </header>
 
@@ -461,11 +505,24 @@
         代わりに、<strong>コードに紐付いた検証可能な一文</strong>を最小単位にする。
         こうすると教材・出題・記録・陳腐化検出のすべてが同じIDで回る。
       </p>
+      <p>
+        claim には<strong>型</strong>を持たせる。
+        <span class="chip type">invariant</span>（成り立ち続けるべき性質）、
+        <span class="chip type">decision</span>（なぜこの形かという判断）、
+        <span class="chip type">dataflow</span>（データがどう流れるか）、
+        <span class="chip type">failure</span>（どう壊れうるか）、
+        <span class="chip type">convention</span>（このリポジトリの約束事）。
+        型は飾りではなく、出題形式（不変条件なら反例探し、データフローなら経路当て）と検証手段の選択を決める入力になる。
+      </p>
 
       <div class="claim-card">
         <div class="claim-id">
           <span>CLAIM · auth-004</span>
-          <span class="chip inferred">intent: inferred</span>
+          <span class="claim-chips">
+            <span class="chip type">invariant</span>
+            <span class="chip verified">verified</span>
+            <span class="chip inferred">intent: inferred</span>
+          </span>
         </div>
         <div class="claim-body">
           外部公開されるルートは全て <code>middleware/auth.py</code> の <code>require_auth</code> を通る。これを迂回する登録経路は存在しない。
@@ -476,8 +533,12 @@
             <span class="meta-val">middleware/auth.py :: require_auth<br>routes/__init__.py :: register_all</span>
           </div>
           <div class="meta-row">
-            <span class="meta-key">at sha</span>
-            <span class="meta-val">9f2c1ab</span>
+            <span class="meta-key">verify</span>
+            <span class="meta-val">scripts/audit_routes.py --public --without require_auth → 0件</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">last pass</span>
+            <span class="meta-val">2026-08-29 @ 9f2c1ab</span>
           </div>
           <div class="meta-row">
             <span class="meta-key">intent</span>
@@ -496,7 +557,7 @@
         <span class="chip recorded">recorded</span> は PR やADRに実在する記述、
         <span class="chip inferred">inferred</span> はコードからの推定、
         <span class="chip unknown">unknown</span> は根拠なし。
-        推定を事実として教えないことが、この仕組みが嘘を教えないための唯一の防波堤になる。
+        推定を事実として教えないことが、この仕組みが嘘を教えないための防波堤の一つになる。
       </p>
 
       <p class="pull">
@@ -507,38 +568,114 @@
 
   <section>
     <div class="sec-head">
+      <div class="sec-label">verification</div>
+      <h2>claim に検証手続きを添付する</h2>
+    </div>
+    <div class="stack">
+      <p>
+        v1 の最大の弱点は、claim の品質下限と鮮度の両方がエージェントの善意に預けられていたことだった。
+        v2 ではこれを一つの仕組みで塞ぐ。<strong>抽出時にエージェントは、可能な限り機械的な検証手続き（grep・スクリプト・テスト参照）を claim に添付し、その場で実行して裏を取る</strong>。
+      </p>
+      <p>
+        検証手続きを持ち実行に通った claim は <span class="chip verified">verified</span>、
+        書けなかったものは <span class="chip asserted">asserted</span> とラベルする。
+        意図の recorded / inferred が「意図の信頼性」の防波堤であるのと同型に、これは「事実の信頼性」の防波堤になる。
+        効果は二重で：
+      </p>
+      <p>
+        <strong>品質下限</strong> — もっともらしく間違った claim は、verify を書こうとした時点で大半が露見する。
+        承認ゲートを置かない方針は維持したまま、疑いの主戦場が asserted だけに絞られる。
+        asserted の比率そのものを claim 集合の品質指標として表示する。
+      </p>
+      <p>
+        <strong>陳腐化検出の格上げ</strong> — verified な claim は、SHA 比較（変わったかもしれない）ではなく<strong>再実行（今も真か）</strong>で検査できる。
+        アンカー先が変わっても verify が通れば claim は生きている。stale の大半が誤検知ごと消える。
+        asserted な claim だけがアンカー照合のフォールバックに残る。
+      </p>
+      <p>
+        既存テストは「真であってほしいと明文化された一文」そのものなので、<strong>最初の verified claim の供給源として収穫する</strong>。
+        「怪しい」ボタンは、押すとエージェントの再検証タスク（verify の再実行、反例探し）が走り、訂正または棄却が訂正履歴に記録される——ここまでを含めて一つのフローとして定義する。
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-label">entry</div>
+      <h2>入口は順序ではなく、地図</h2>
+    </div>
+    <div class="stack">
+      <p>
+        学習の完了基準も順序も定義しない方針は維持する。ただし数百の claim を前にトピック一覧だけ渡されても入れない。
+        そこで抽出時に、claim 集合の最上位に<strong>オリエンテーション</strong>を生成する。
+        システム全体のアーキテクチャ、モジュールの責務、主要なデータの流れ、貫かれている設計思想を一枚の読み物＋図として書き、
+        <strong>すべての要素からトピックと claim へリンクを張る</strong>。
+        メンタルモデルの骨格を先に渡し、気になった場所から深掘りできるようにする。順序は与えないが、地図は与える。
+      </p>
+      <p>ブラウザ側の体験は四つの面で構成する。</p>
+    </div>
+    <div class="surfaces">
+      <div class="surface-card">
+        <div class="surface-num">01 · 入口</div>
+        <div class="surface-title">オリエンテーション地図</div>
+        <div class="surface-desc">アーキテクチャと設計思想の全体像。各モジュール・フローから該当トピックと claim 群へ降りられる。学習カバレッジと採掘カバレッジもここに重ねて表示する。</div>
+      </div>
+      <div class="surface-card">
+        <div class="surface-num">02 · 閲覧</div>
+        <div class="surface-title">コード × claim オーバーレイ</div>
+        <div class="surface-desc">実コードの上に claim カードが浮かぶ閲覧モード。「場所を特定できる」ゴールの土台であり、場所当て問題の出題面も兼ねる。</div>
+      </div>
+      <div class="surface-card">
+        <div class="surface-num">03 · 教材</div>
+        <div class="surface-title">実行経路ツアー</div>
+        <div class="surface-desc">リクエストや処理がコードを流れる様子をステップ実行風に辿る。claim が経路上の該当箇所で現れ、ばらばらの事実が一本の線になる。</div>
+      </div>
+      <div class="surface-card">
+        <div class="surface-num">04 · 定着</div>
+        <div class="surface-title">出題セッション</div>
+        <div class="surface-desc">1問ずつのテンポ、即時フィードバック、誤答時の丁寧な解説。正誤とは独立に「このclaimは怪しい」を常設する。</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
       <div class="sec-label">storage</div>
-      <h2>知識は共有し、理解度は個人に閉じる</h2>
+      <h2>資産と現在地を分けて置く</h2>
     </div>
     <p>
-      claim集合はリポジトリから採掘したチームの資産なので、コミットして共有する。
-      誰が何をわかっているかは評価につながるので、個人の手元に閉じる。この分割で、新メンバーは採掘コストを払わずに初日から学習に入れる。
+      ソロ運用でも二層に分ける。claim 集合はリポジトリから採掘した<strong>資産</strong>なのでコミットして履歴管理する。
+      学習状態は<strong>自分の現在地</strong>であって、リポジトリの歴史に混ぜるノイズになるので gitignore する。
+      将来チームで使うなら、この線がそのまま共有境界になる（採掘コストを払うのは一人、全員がその上に乗る）。
     </p>
     <div class="layers">
       <div class="layer shared">
-        <div class="layer-tag">committed · 共有</div>
+        <div class="layer-tag">committed · 資産</div>
         <div class="layer-path">.comprehension/</div>
         <ul>
-          <li>claim集合（本文・アンカー・意図・出所ラベル）</li>
+          <li>claim集合（本文・型・アンカー・verify・意図・出所ラベル）</li>
+          <li>オリエンテーション（地図・設計思想）</li>
           <li>トピック定義と claim の所属</li>
-          <li>訂正履歴（誰がいつ何を直したか）</li>
+          <li>問題プール（claim × 難易度 × 形式）</li>
+          <li>訂正履歴（いつ何をなぜ直したか）</li>
         </ul>
       </div>
       <div class="layer private">
-        <div class="layer-tag">gitignored · 個人</div>
+        <div class="layer-tag">gitignored · 現在地</div>
         <div class="layer-path">.learning/</div>
         <ul>
-          <li>claim ID → 状態 <span class="mono">unseen / learned / stale / invalidated</span></li>
+          <li>claim ID → 状態 <span class="mono">unseen / learned / stale / invalidated / orphaned</span></li>
           <li>学習した時点の commit SHA</li>
           <li>出題と正誤の履歴</li>
         </ul>
       </div>
     </div>
     <p>
-      状態を分けたのは、<strong>「古びた」と「間違っていた」を区別する必要がある</strong>から。
-      アンカー先のコードが変われば <span class="mono">stale</span>（内容は正しかったが現状と合わない可能性）、
-      claimが訂正されれば <span class="mono">invalidated</span>（学んだ内容自体が誤りだった）。
-      後者は訂正した本人だけでなく、そのclaimを学習済みにしている全員に伝播する。
+      状態を分けるのは、<strong>「古びた」と「間違っていた」を区別する必要がある</strong>から。
+      verify が落ちるかアンカー先が変われば <span class="mono">stale</span>（内容は正しかったが現状と合わない可能性）、
+      claim 本文が訂正されれば <span class="mono">invalidated</span>（学んだ内容自体が誤りだった）、
+      アンカー先のコードが消えれば <span class="mono">orphaned</span>（claim の対象自体が消滅した可能性）。
+      それぞれ再学習の意味が違う。
     </p>
   </section>
 
@@ -548,53 +685,73 @@
       <h2>体験の一周</h2>
     </div>
     <p>
-      採点も抽出もエージェント自身が行う。ローカルサーバはLLMを持たない状態の受け渡し口であり、
-      この仕組みは本質的にターン制になる。
+      抽出・執筆・記述採点はエージェント、出題の進行と採点の大半はコード。
+      v1 では全問がエージェント往復だったが、v2 では<strong>問題プールを事前生成し、適応ロジックをサーバ側の決定的ポリシーに移す</strong>。
+      エージェントのターンが要るのは同期・記述採点・再検証だけになり、出題中の待ち時間がほぼ消える。
     </p>
     <ol class="flow">
       <li>
         <div class="flow-body">
           <span class="flow-actor">agent · 初回のみ</span>
           <span class="flow-title">全体を一度だけ重く抽出する</span>
-          <span class="flow-desc">リポジトリ全体を走査してトピックと claim集合を作り切り、コミットする。以降は差分更新のみ。一人が一度払えば、チーム全員がその上に乗る。</span>
+          <span class="flow-desc">リポジトリ全体を走査してトピック・claim集合・verify手続き・オリエンテーション・問題プールを作り切り、実行できるverifyは全て実行して裏を取ってからコミットする。</span>
         </div>
       </li>
       <li>
         <div class="flow-body">
-          <span class="flow-actor">code</span>
-          <span class="flow-title">起動時に陳腐化を検査する</span>
-          <span class="flow-desc">学習済みclaimのアンカー先が学習時のSHAから変更されていないかを機械的に照合し、変わっていれば stale に落とす。トピック一覧はカバレッジ付きで提示する。推定理解度は出さない。</span>
+          <span class="flow-actor">agent · 起動時</span>
+          <span class="flow-title">差分を同期する</span>
+          <span class="flow-desc">前回からのコード差分を検査し、影響を受けた claim の verify を再実行、壊れたものを訂正または stale/orphaned に落とし、新しい領域から claim を追加抽出し、オリエンテーションと問題プールを追随させる。学ぶ直前に必ず鮮度が揃う。</span>
         </div>
       </li>
       <li>
         <div class="flow-body">
           <span class="flow-actor">human</span>
-          <span class="flow-title">深めたい領域を選ぶ</span>
-          <span class="flow-desc">どこまでやれば終わりかは定義しない。カバレッジと理解度が見えていれば、次に進むかどうかは本人が決められる。</span>
+          <span class="flow-title">地図から入る</span>
+          <span class="flow-desc">オリエンテーションで全体像を掴み、気になった領域を選ぶ。どこまでやれば終わりかは定義しない。二軸のカバレッジが見えていれば、次に進むかどうかは本人が決められる。</span>
         </div>
       </li>
       <li>
         <div class="flow-body">
-          <span class="flow-actor">agent → browser</span>
-          <span class="flow-title">教材を三つの形で書く</span>
-          <span class="flow-desc">claimカードの集まり（何が成り立っているか）、実行経路のツアー（それがどう繋がるか）、なぜ今の形なのかの経緯（git履歴から）。ばらばらの事実ではなく一本の線になるように。</span>
+          <span class="flow-actor">browser</span>
+          <span class="flow-title">教材で線をつくる</span>
+          <span class="flow-desc">claimカード（何が成り立っているか）、実行経路ツアー（どう繋がるか）、経緯（なぜ今の形か、git履歴から）、コードオーバーレイ（どこにあるか）。</span>
         </div>
       </li>
       <li>
         <div class="flow-body">
-          <span class="flow-actor">browser ⇄ agent</span>
-          <span class="flow-title">1問ずつ出題し、採点して次を選ぶ</span>
-          <span class="flow-desc">選択式・場所当て・記述の混合。正誤とは独立に「このclaimは怪しい」を常設し、承認ゲートを置かない代わりの訂正の入口にする。</span>
+          <span class="flow-actor">code</span>
+          <span class="flow-title">プールから適応的に出題する</span>
+          <span class="flow-desc">正答なら深く・隣へ、誤答なら同じclaimを別の角度で。ポリシーは決定的で、選択式・場所当ては即採点。エージェント往復が要るのは記述回答の採点だけで、それも非同期でよい。</span>
         </div>
       </li>
       <li>
         <div class="flow-body">
           <span class="flow-actor">code</span>
           <span class="flow-title">.learning に書き戻す</span>
-          <span class="flow-desc">状態・SHA・正誤履歴を更新し、カバレッジを再計算する。次回起動時の出発点になる。</span>
+          <span class="flow-desc">状態・SHA・正誤履歴を更新し、二軸カバレッジを再計算する。次回起動時の出発点になる。</span>
         </div>
       </li>
     </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-label">coverage</div>
+      <h2>カバレッジは二軸で見せる</h2>
+    </div>
+    <div class="stack">
+      <p>
+        推定理解度は出さない方針を維持しつつ、根拠が明確な数字だけを二つ見せる。
+        <strong>学習カバレッジ</strong>（学習済み claim ÷ 全 claim）は自分の進み、
+        <strong>採掘カバレッジ</strong>（1つ以上の claim にアンカーされたコード ÷ 全コード）は claim 集合そのものの網羅を示す。
+      </p>
+      <p>
+        v1 の open issue「カバレッジ100%でも抽出漏れは見えない」への答えがこの第二軸になる。
+        分母の外に消えていた un-claimed 領域が、「誰も何も主張していないディレクトリ」としてオリエンテーション地図の上に可視化される。
+        満点の画面の裏に消える領域をなくす。
+      </p>
+    </div>
   </section>
 
   <section>
@@ -614,12 +771,12 @@
         <tbody>
           <tr>
             <td>Python</td>
-            <td class="q">claim / 学習ログのスキーマと読み書き、ローカルサーバ、HTML描画、アンカー変更の検出、カバレッジ集計、選択式と場所当ての即採点</td>
+            <td class="q">claim / 学習ログのスキーマと読み書き、verify の実行と結果判定、アンカー照合、差分検出、ローカルサーバとUI描画、二軸カバレッジ集計、プールからの出題ポリシー、選択式・場所当ての即採点</td>
             <td class="a">正解が確定しているものと、実行のたびに変わってはいけないもの。ここが決定的なら、エージェントの出力がぶれても記録は壊れない。</td>
           </tr>
           <tr>
             <td>Agent</td>
-            <td class="q">claim抽出、意図の推定と出所判定、教材の執筆、問題の生成、記述回答の採点、claim訂正の反映</td>
+            <td class="q">claim の抽出と型付け、verify 手続きの設計、意図の推定と出所判定、オリエンテーションと教材の執筆、問題プールの生成、記述回答の採点、「怪しい」への再検証と訂正</td>
             <td class="a">コードを読んで意味を汲む必要があるもの。ここは毎回違ってよく、違うほうが学習体験としては良い。</td>
           </tr>
         </tbody>
@@ -635,24 +792,24 @@
     <div class="table-scroll">
       <table>
         <thead>
-          <tr><th>論点</th><th>決定</th></tr>
+          <tr><th>論点</th><th>決定</th><th>v1から</th></tr>
         </thead>
         <tbody>
-          <tr><td>ゴール</td><td class="a">設計意図を説明できる／場所を特定できる／AI出力の異常に気づける</td></tr>
-          <tr><td>主対象</td><td class="a">既存開発者と新メンバーを同じ仕組みで扱う</td></tr>
-          <tr><td>意図の出所</td><td class="a">推論を許すが出所ラベルを必須にする</td></tr>
-          <tr><td>ログ粒度</td><td class="a">claim単位＋コードアンカー＋学習時SHA</td></tr>
-          <tr><td>共有範囲</td><td class="a">claim集合はコミット、理解度はgitignore</td></tr>
-          <tr><td>claim検証</td><td class="a">人間の承認ゲートは置かない。訂正手段を用意する</td></tr>
-          <tr><td>訂正の伝播</td><td class="a">訂正されたら全員そのclaimは再学習対象</td></tr>
-          <tr><td>完了基準</td><td class="a">定義しない。カバレッジと理解度を見せて本人が決める</td></tr>
-          <tr><td>推定理解度</td><td class="a">出さない</td></tr>
-          <tr><td>出題形式</td><td class="a">選択式・記述AI採点・場所当ての混合</td></tr>
-          <tr><td>往復単位</td><td class="a">1問ずつ</td></tr>
-          <tr><td>入出力</td><td class="a">ローカルサーバ＋ブラウザ</td></tr>
-          <tr><td>初回抽出</td><td class="a">全体を一度だけ重く</td></tr>
-          <tr><td>起動</td><td class="a">当面は手動。定期実行は別途検討</td></tr>
-          <tr><td>MVP</td><td class="a">抽出 → 選択 → 教材 → テストの1周</td></tr>
+          <tr><td>ゴール</td><td class="a">設計意図を説明できる／場所を特定できる／AI出力の異常に気づける</td><td class="delta">維持</td></tr>
+          <tr><td>主対象</td><td class="a">まず自分一人。チーム共有（訂正の伝播・評価配慮）は将来拡張として境界だけ保つ</td><td class="delta">変更</td></tr>
+          <tr><td>claimの単位</td><td class="a">型付き・アンカー付きの検証可能な一文</td><td class="delta">型を追加</td></tr>
+          <tr><td>claim検証</td><td class="a">verify手続きを添付し抽出時に実行。verified / asserted を明示。承認ゲートは置かない</td><td class="delta">強化</td></tr>
+          <tr><td>陳腐化検出</td><td class="a">verified は verify 再実行、asserted はアンカー照合のフォールバック</td><td class="delta">格上げ</td></tr>
+          <tr><td>意図の出所</td><td class="a">推論を許すが recorded / inferred / unknown を必須にする</td><td class="delta">維持</td></tr>
+          <tr><td>共有範囲</td><td class="a">.comprehension はコミット（資産）、.learning は gitignore（現在地）</td><td class="delta">理由を変更</td></tr>
+          <tr><td>学習の入口</td><td class="a">オリエンテーション地図から深掘り。順序と完了基準は与えない</td><td class="delta">新規</td></tr>
+          <tr><td>カバレッジ</td><td class="a">学習カバレッジと採掘カバレッジの二軸。推定理解度は出さない</td><td class="delta">新規</td></tr>
+          <tr><td>出題方式</td><td class="a">事前生成プール＋決定的な適応ポリシー。エージェント往復は記述採点のみ</td><td class="delta">変更</td></tr>
+          <tr><td>出題形式</td><td class="a">選択式・記述AI採点・場所当ての混合。型が形式を決める</td><td class="delta">維持＋型連動</td></tr>
+          <tr><td>差分更新</td><td class="a">学習セッション起動時に同期（再検証・追加抽出・プール追随）</td><td class="delta">変更</td></tr>
+          <tr><td>忘却</td><td class="a">v1同様、扱わない（明示的に先送り）</td><td class="delta">維持</td></tr>
+          <tr><td>入出力</td><td class="a">ローカルサーバ＋ブラウザ</td><td class="delta">維持</td></tr>
+          <tr><td>MVP</td><td class="a">抽出 → 地図 → 教材 → 出題の1周</td><td class="delta">地図を追加</td></tr>
         </tbody>
       </table>
     </div>
@@ -665,45 +822,54 @@
     </div>
     <div class="risks">
       <div class="risk-item">
-        <div class="risk-head">カバレッジ100%でも、抽出漏れは見えない</div>
+        <div class="risk-head">verify 自体の品質は、誰も検証しない</div>
         <div class="risk-text">
-          カバレッジの分母は「エージェントが抽出できたclaim」でしかない。抽出されなかった領域は、未学習としてすら現れず、満点の画面の裏に消える。
-          unknown unknowns を減らすために作った仕組みが、新しい unknown unknown を作る構造になっている。
-          分母の信頼性を別の軸（ファイル網羅率、未claim領域の明示など）で示す必要がある。
+          緩すぎる verify（常に通る grep）は偽の verified を作り、v1 の「もっともらしく間違った claim」より質の悪い安心を生む。
+          verify は claim の正しさの証明ではなく反証機会の確保でしかない、という位置づけを UI 上でも崩さないこと。
+          抽出時に「この verify は claim が偽なら本当に落ちるか」をエージェントに自問させる手順を Skill 側に書く。
         </div>
       </div>
       <div class="risk-item">
-        <div class="risk-head">承認ゲートなしで、claimの品質下限をどう保つか</div>
+        <div class="risk-head">asserted な claim の品質下限は依然として薄い</div>
         <div class="risk-text">
-          「怪しい」ボタンは、疑いを持てた人にしか押せない。もっともらしく間違ったclaimほど疑われずに残る。
-          抽出時にエージェント自身がどこまで自己検証するか（grepやテストで裏を取る、反例を探す）が実質的な品質の下限になる。
+          verify を書けなかった claim（設計判断・慣習に多い）は「怪しい」ボタン頼みのまま。
+          asserted 比率を品質指標として見せることと、出題時に asserted であることを学習者に明示することで、疑う余地を残す。
         </div>
       </div>
       <div class="risk-item soft">
-        <div class="risk-head">1問ずつの往復はターンを消費する</div>
+        <div class="risk-head">オリエンテーションの鮮度は claim のように検査できない</div>
         <div class="risk-text">
-          適応的な出題と引き換えに、待ち時間とコストが線形に増える。
-          選択式と場所当てはサーバ側で即採点できるので、往復が本当に必要なのは記述問題と次問の選択だけ。ここを設計で削れる余地がある。
+          地図はアンカーも verify も持たない散文なので、陳腐化を機械的に検出できない。
+          起動時同期でエージェントが書き直す運用だが、差分が地図の記述に影響するかの判定自体がエージェント任せになる。
+          地図の各節に「依拠している claim ID」を持たせ、それらが stale になったら節を要更新とする、が次の一手の候補。
         </div>
       </div>
       <div class="risk-item soft">
-        <div class="risk-head">新メンバーの初日、数百のclaimの前でどこから始めるか</div>
+        <div class="risk-head">採掘カバレッジは「浅い網羅」を隠す</div>
         <div class="risk-text">
-          claim集合はあるが .learning は空。推定理解度も出さない。トピック一覧だけでは入口が広すぎる。
-          既存開発者には自明な「まずここ」の順序を、共有側に何らかの形で持たせる必要があるかもしれない。
+          ファイルに1つでも claim があれば分子に入るため、重要な性質が抜けたまま網羅済みに見える。
+          アンカーの有無は見えるようになったが、アンカー済み領域の中の抽出漏れは依然として見えない。
         </div>
       </div>
       <div class="risk-item soft">
-        <div class="risk-head">忘却をどう扱うか</div>
+        <div class="risk-head">問題プールの使い回しは記憶ゲーになる</div>
         <div class="risk-text">
-          陳腐化はコード変更で検出できるが、コードが変わらなくても人は忘れる。間隔反復を入れるかどうかは、定期実行の検討と一緒に決まる。
+          同じ問題の再出題は claim の理解ではなく答えの記憶を測ってしまう。
+          プールに claim ごとの問題数の下限を置く、正答済み問題は同一 claim の別問題を優先する、枯渇したら次回同期で補充する、あたりの契約が要る。
+        </div>
+      </div>
+      <div class="risk-item soft">
+        <div class="risk-head">忘却は明示的に先送りした</div>
+        <div class="risk-text">
+          陳腐化はコード変更で検出できるが、コードが変わらなくても人は忘れる。
+          正誤履歴は記録しているので、間隔反復を後から足す余地は残っている。定期実行の検討と一緒に決める。
         </div>
       </div>
     </div>
   </section>
 
   <footer>
-    debt2comp / concept v1 / 2026-08-29
+    debt2comp / concept v2 / 2026-08-29
   </footer>
 
 </div>
