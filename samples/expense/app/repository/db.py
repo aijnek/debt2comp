@@ -55,6 +55,15 @@ CREATE TABLE IF NOT EXISTS payments (
     paid_at     TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS notifications (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    expense_id   INTEGER NOT NULL REFERENCES expenses(id),
+    recipient_id INTEGER NOT NULL REFERENCES users(id),
+    message      TEXT NOT NULL,
+    created_at   TEXT NOT NULL,
+    read_at      TEXT
+);
+
 CREATE TABLE IF NOT EXISTS audit_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     entity_type TEXT NOT NULL,
@@ -68,6 +77,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
 CREATE INDEX IF NOT EXISTS idx_approvals_expense ON approvals(expense_id);
 CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_id, read_at);
 """
 
 

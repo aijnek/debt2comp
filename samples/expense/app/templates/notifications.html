@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}通知{% endblock %}
+{% block content %}
+<h1>通知</h1>
+{% if notifications %}
+<form method="post" action="/notifications/read"><button type="submit">すべて既読にする</button></form>
+<ul class="history">
+  {% for n in notifications %}
+  <li{% if not n['read_at'] %} class="unread"{% endif %}>
+    <time>{{ n['created_at'] }}</time>
+    <a href="/expenses/{{ n['expense_id'] }}">{{ n['message'] }}</a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty">通知はありません。</p>
+{% endif %}
+{% endblock %}

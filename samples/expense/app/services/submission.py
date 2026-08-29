@@ -9,6 +9,7 @@ from app import config
 from app.domain import state_machine
 from app.money import Money
 from app.repository import audit, db, expenses
+from app.services import notification
 
 
 class ValidationError(Exception):
@@ -79,5 +80,8 @@ def submit_expense(
             action="submitted",
             actor_id=submitter_id,
             detail=amount.format(),
+        )
+        notification.notify_all_approvers(
+            conn, expenses.get(conn, expense_id), step=1
         )
     return expense_id

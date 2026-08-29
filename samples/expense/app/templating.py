@@ -13,7 +13,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from app.repository import users
+from app.repository import notifications, users
 
 _env = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
@@ -29,6 +29,7 @@ def render(
     merged: dict[str, Any] = {
         "current_user": user,
         "all_users": users.list_all(conn),
+        "unread": notifications.unread_count(conn, user["id"]),
     }
     merged.update(context or {})
     return _env.TemplateResponse(request, name, merged, status_code=status_code)

@@ -11,6 +11,7 @@ import sqlite3
 from app.domain import approval_policy, state_machine
 from app.money import Money
 from app.repository import audit, db, expenses, users
+from app.services import notification
 
 APPROVER_ROLES = ("manager", "finance", "admin")
 
@@ -168,4 +169,17 @@ def _decide(
             actor_id=approver_id,
             detail=comment,
         )
+        _notify_next(conn, expense, status, step)
     return status
+
+
+def _notify_next(
+    conn: sqlite3.Connection, expense: sqlite3.Row, status: str, step: int
+) -> None:
+    if status == state_machine.PARTIALLY_APPROVED:
+        notification.notify_all_approvers(conn, expense, step=step + 1)
+        return
+    outcome = "承認されました" if status == state_machine.APPROVED else "却下されました"
+    notification.notify_submitter(
+        conn, expense["id"], f"申請 #{expense['id']} は{outcome}"
+    )

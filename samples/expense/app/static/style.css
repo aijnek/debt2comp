@@ -43,3 +43,4 @@ button { font: inherit; align-self: flex-start; padding: .45rem 1.1rem; border: 
 .row { display: flex; gap: .6rem; }
 button.danger { background: #9c3b2c; }
 form.inline { display: flex; gap: .4rem; align-items: center; }
+li.unread { font-weight: 600; }
