@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}経費精算{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/">経費精算</a>
+    <nav>
+      <a href="/expenses/new">新規申請</a>
+      {% if current_user["role"] in ("manager", "finance", "admin") %}
+      <a href="/approvals">承認待ち</a>
+      {% endif %}
+      {% if current_user["role"] in ("finance", "admin") %}
+      <a href="/payments">支払い待ち</a>
+      {% endif %}
+      {% if current_user["role"] == "admin" %}
+      <a href="/admin/users">ユーザー管理</a>
+      {% endif %}
+      <a href="/notifications">通知{% if unread %}（{{ unread }}）{% endif %}</a>
+      {% block nav %}{% endblock %}
+    </nav>
+    <form class="whoami" method="post" action="/session/user">
+      <select name="user_id" onchange="this.form.submit()">
+        {% for u in all_users %}
+        <option value="{{ u['id'] }}" {% if u['id'] == current_user['id'] %}selected{% endif %}>
+          {{ u['name'] }}（{{ u['role'] }}）
+        </option>
+        {% endfor %}
+      </select>
+      <noscript><button type="submit">切替</button></noscript>
+    </form>
+  </header>
+  <main>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

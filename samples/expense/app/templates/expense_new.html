@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}新規申請{% endblock %}
+{% block content %}
+<h1>新規申請</h1>
+<form method="post" action="/expenses" class="card" enctype="multipart/form-data">
+  <label>金額（円）
+    <input name="amount" inputmode="numeric" value="{{ form.amount if form else '' }}" required>
+  </label>
+  <label>費目
+    <select name="category">
+      {% for c in categories %}
+      <option value="{{ c }}" {% if form and form.category == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>発生日
+    <input name="incurred_on" type="date" value="{{ form.incurred_on if form else '' }}" required>
+  </label>
+  <label>用途
+    <input name="description" value="{{ form.description if form else '' }}" required>
+  </label>
+  <label>領収書（{{ receipt_required_above }} を超える申請は必須）
+    <input type="file" name="receipt" accept=".pdf,.png,.jpg,.jpeg,.heic">
+  </label>
+  <button type="submit">申請する</button>
+</form>
+{% endblock %}

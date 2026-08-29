@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# 学習状態（現在地）はコミットしない。.comprehension（資産）はコミットする
+.learning/
+
+# サンプルアプリのローカルDB
+*.sqlite3

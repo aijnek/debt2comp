@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}ユーザー管理{% endblock %}
+{% block content %}
+<h1>ユーザー管理</h1>
+<table>
+  <thead>
+    <tr><th>#</th><th>名前</th><th>ロール</th><th>部門</th><th>上長</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u['id'] }}</td>
+      <td>{{ u['name'] }}</td>
+      <td>{{ fmt.role_label(u['role']) }}</td>
+      <td>{{ u['department'] }}</td>
+      <td>{{ u['manager_id'] or '—' }}</td>
+      <td>
+        <form method="post" action="/admin/users/{{ u['id'] }}/delete" class="inline">
+          <button type="submit" class="danger">削除</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>ユーザーを追加</h2>
+<form method="post" action="/admin/users" class="card">
+  <label>名前<input name="name" required></label>
+  <label>ロール
+    <select name="role">
+      {% for r in roles %}<option value="{{ r }}">{{ fmt.role_label(r) }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>部門<input name="department" required></label>
+  <label>上長の id<input name="manager_id" inputmode="numeric"></label>
+  <button type="submit">追加する</button>
+</form>
+{% endblock %}

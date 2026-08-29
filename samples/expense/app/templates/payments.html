@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}支払い待ち{% endblock %}
+{% block content %}
+<h1>支払い待ち</h1>
+{% if expenses %}
+<table>
+  <thead>
+    <tr><th>#</th><th>申請者</th><th>用途</th><th class="num">金額</th><th>支払い</th></tr>
+  </thead>
+  <tbody>
+    {% for e in expenses %}
+    <tr>
+      <td><a href="/expenses/{{ e['id'] }}">{{ e['id'] }}</a></td>
+      <td>{{ e['submitter_name'] }}</td>
+      <td>{{ e['description'] }}</td>
+      <td class="num">{{ money(e['amount_minor'], e['currency']).format() }}</td>
+      <td>
+        <form method="post" action="/expenses/{{ e['id'] }}/pay" class="inline">
+          <input name="reference" placeholder="振込参照番号" required>
+          <button type="submit">支払う</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">支払い待ちの申請はありません。</p>
+{% endif %}
+{% endblock %}
