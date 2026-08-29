@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.bootstrap import ensure_database
-from app.routers import approvals, expenses, notifications, payments, session
+from app.routers import admin, approvals, expenses, notifications, payments, session
 
 
 @asynccontextmanager
@@ -35,4 +35,5 @@ app.include_router(expenses.router)
 app.include_router(approvals.router)
 app.include_router(payments.router)
 app.include_router(notifications.router)
+app.include_router(admin.router)
 app.include_router(session.router)

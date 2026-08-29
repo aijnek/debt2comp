@@ -17,6 +17,9 @@
       {% if current_user["role"] in ("finance", "admin") %}
       <a href="/payments">支払い待ち</a>
       {% endif %}
+      {% if current_user["role"] == "admin" %}
+      <a href="/admin/users">ユーザー管理</a>
+      {% endif %}
       <a href="/notifications">通知{% if unread %}（{{ unread }}）{% endif %}</a>
       {% block nav %}{% endblock %}
     </nav>

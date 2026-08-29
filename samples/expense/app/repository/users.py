@@ -71,3 +71,8 @@ def update(
 
 def delete(conn: sqlite3.Connection, user_id: int) -> None:
     conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+
+def next_id(conn: sqlite3.Connection) -> int:
+    row = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 AS n FROM users").fetchone()
+    return int(row["n"])
