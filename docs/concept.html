@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>理解負債の返済設計</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+  :root {
+    --bg:        #eff3f2;
+    --surface:   #ffffff;
+    --surface-2: #e6ebea;
+    --ink:       #161d1e;
+    --ink-2:     #3a4749;
+    --muted:     #647476;
+    --rule:      #cfd8d7;
+    --rule-soft: #dfe6e5;
+    --accent:    #0e6f68;
+    --accent-2:  #0b514c;
+    --accent-wash:#dcecea;
+    --warn:      #8f6110;
+    --warn-wash: #f4e9d4;
+    --risk:      #9c3b2c;
+    --risk-wash: #f4e2de;
+    --neutral-chip: #8b9a9b;
+
+    --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+    --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+    --col: 40rem;
+    --wide: 58rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #101516;
+      --surface:   #171e1f;
+      --surface-2: #1e2728;
+      --ink:       #e4ebea;
+      --ink-2:     #bfcbca;
+      --muted:     #8b9c9c;
+      --rule:      #2b3737;
+      --rule-soft: #232d2e;
+      --accent:    #4cb8ad;
+      --accent-2:  #7fd3c9;
+      --accent-wash:#17322f;
+      --warn:      #d4a04a;
+      --warn-wash: #33280f;
+      --risk:      #e08a78;
+      --risk-wash: #3a201a;
+      --neutral-chip: #6d7d7e;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #101516;
+    --surface:   #171e1f;
+    --surface-2: #1e2728;
+    --ink:       #e4ebea;
+    --ink-2:     #bfcbca;
+    --muted:     #8b9c9c;
+    --rule:      #2b3737;
+    --rule-soft: #232d2e;
+    --accent:    #4cb8ad;
+    --accent-2:  #7fd3c9;
+    --accent-wash:#17322f;
+    --warn:      #d4a04a;
+    --warn-wash: #33280f;
+    --risk:      #e08a78;
+    --risk-wash: #3a201a;
+    --neutral-chip: #6d7d7e;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 16px;
+    line-height: 1.85;
+    margin: 0;
+    padding: 0 1.5rem 6rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: var(--wide);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4.5rem;
+  }
+
+  .col { max-width: var(--col); }
+
+  /* ---------- masthead ---------- */
+
+  header.mast {
+    padding: 5rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  h1 {
+    font-family: var(--f-display);
+    font-weight: 900;
+    font-size: clamp(2.4rem, 6vw, 3.9rem);
+    line-height: 1.18;
+    letter-spacing: 0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .lede {
+    font-size: 1.075rem;
+    color: var(--ink-2);
+    max-width: var(--col);
+    margin: 0;
+  }
+
+  .mast-rule {
+    height: 3px;
+    background: var(--accent);
+    width: 4rem;
+  }
+
+  /* ---------- sections ---------- */
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .sec-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 1.25rem;
+  }
+
+  .sec-label {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  h2 {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 3.2vw, 2rem);
+    line-height: 1.4;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 1.12rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  p { margin: 0; max-width: var(--col); }
+
+  .stack { display: flex; flex-direction: column; gap: 1.1rem; }
+
+  strong { font-weight: 700; color: var(--ink); }
+
+  code, .mono {
+    font-family: var(--f-mono);
+    font-size: 0.86em;
+    background: var(--surface-2);
+    padding: 0.1em 0.38em;
+    border-radius: 3px;
+  }
+
+  /* ---------- claim card ---------- */
+
+  .claim-card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--accent);
+    padding: 1.5rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: var(--col);
+  }
+
+  .claim-id {
+    font-family: var(--f-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .claim-body {
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.7;
+  }
+
+  .claim-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    border-top: 1px solid var(--rule-soft);
+    padding-top: 0.9rem;
+    font-size: 0.86rem;
+  }
+
+  .meta-row {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+
+  .meta-key {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .meta-val { color: var(--ink-2); font-family: var(--f-mono); font-size: 0.8rem; line-height: 1.7; }
+  .meta-val.jp { font-family: var(--f-body); font-size: 0.88rem; }
+
+  .chip {
+    display: inline-block;
+    font-family: var(--f-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2em 0.6em;
+    border-radius: 2px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .chip.recorded { background: var(--accent-wash); color: var(--accent-2); }
+  .chip.inferred { background: var(--warn-wash); color: var(--warn); }
+  .chip.unknown  { background: var(--surface-2); color: var(--muted); }
+
+  :root[data-theme="dark"] .chip.recorded,
+  :root[data-theme="dark"] .chip.inferred { color: var(--ink); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .chip.recorded,
+    :root:not([data-theme="light"]) .chip.inferred { color: var(--ink); }
+  }
+
+  .doubt-btn {
+    font-family: var(--f-body);
+    font-size: 0.78rem;
+    color: var(--risk);
+    border: 1px solid var(--risk);
+    background: transparent;
+    padding: 0.3em 0.75em;
+    border-radius: 2px;
+    align-self: flex-start;
+  }
+
+  /* ---------- two-layer diagram ---------- */
+
+  .layers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    max-width: var(--wide);
+  }
+  @media (max-width: 40rem) { .layers { grid-template-columns: 1fr; } }
+
+  .layer {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 1.35rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .layer.shared { border-top: 3px solid var(--accent); }
+  .layer.private { border-top: 3px solid var(--warn); }
+
+  .layer-path {
+    font-family: var(--f-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .layer-tag {
+    font-family: var(--f-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .layer ul {
+    margin: 0; padding-left: 1.1rem;
+    font-size: 0.88rem; color: var(--ink-2);
+    line-height: 1.75;
+  }
+
+  /* ---------- flow ---------- */
+
+  ol.flow {
+    list-style: none;
+    counter-reset: step;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: var(--wide);
+  }
+
+  ol.flow > li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 3.25rem 1fr;
+    gap: 1.25rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  ol.flow > li:first-child { border-top: 1px solid var(--rule-soft); }
+
+  ol.flow > li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--f-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent);
+    padding-top: 0.15rem;
+  }
+
+  .flow-body { display: flex; flex-direction: column; gap: 0.4rem; }
+  .flow-title { font-weight: 700; font-size: 1rem; }
+  .flow-desc { font-size: 0.92rem; color: var(--ink-2); }
+  .flow-actor {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---------- split table ---------- */
+
+  .table-scroll { overflow-x: auto; max-width: var(--wide); }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 34rem;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  thead th {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+    font-weight: 500;
+  }
+  tbody td:first-child { font-weight: 700; white-space: nowrap; }
+  td.q { color: var(--ink); font-weight: 500; }
+  td.a { color: var(--ink-2); }
+
+  /* ---------- risk list ---------- */
+
+  .risks { display: flex; flex-direction: column; gap: 1rem; max-width: var(--wide); }
+
+  .risk-item {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--risk);
+    padding: 1.2rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .risk-item.soft { border-left-color: var(--warn); }
+  .risk-head { font-weight: 700; font-size: 0.98rem; }
+  .risk-text { font-size: 0.9rem; color: var(--ink-2); }
+
+  /* ---------- pull ---------- */
+
+  .pull {
+    font-family: var(--f-display);
+    font-size: clamp(1.15rem, 2.6vw, 1.5rem);
+    line-height: 1.65;
+    color: var(--ink);
+    border-left: 3px solid var(--accent);
+    padding-left: 1.4rem;
+    max-width: var(--col);
+    text-wrap: balance;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-family: var(--f-mono);
+    letter-spacing: 0.04em;
+  }
+</style>
+
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="mast">
+    <div class="eyebrow">debt2comp — concept</div>
+    <h1>理解負債の返済設計</h1>
+    <div class="mast-rule"></div>
+    <p class="lede">
+      AIがコードを書き、人間が上流設計とハーネスに回ると、動いているシステムに対する理解だけが取り残される。
+      これを「読み物を配って終わり」にせず、<strong>検証可能な主張（claim）を単位として、抽出・学習・出題・記録・訂正を一つの環に閉じる</strong>ための設計メモ。
+    </p>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-label">core unit</div>
+      <h2>すべての単位を claim に揃える</h2>
+    </div>
+    <div class="stack">
+      <p>
+        理解度を「セキュリティ 70%」のようなトピック粒度で持つと、次に何を見せればいいかが決まらない。
+        代わりに、<strong>コードに紐付いた検証可能な一文</strong>を最小単位にする。
+        こうすると教材・出題・記録・陳腐化検出のすべてが同じIDで回る。
+      </p>
+
+      <div class="claim-card">
+        <div class="claim-id">
+          <span>CLAIM · auth-004</span>
+          <span class="chip inferred">intent: inferred</span>
+        </div>
+        <div class="claim-body">
+          外部公開されるルートは全て <code>middleware/auth.py</code> の <code>require_auth</code> を通る。これを迂回する登録経路は存在しない。
+        </div>
+        <div class="claim-meta">
+          <div class="meta-row">
+            <span class="meta-key">anchors</span>
+            <span class="meta-val">middleware/auth.py :: require_auth<br>routes/__init__.py :: register_all</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">at sha</span>
+            <span class="meta-val">9f2c1ab</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">intent</span>
+            <span class="meta-val jp">認可判定を1箇所に集約し、ルート追加時の付け忘れを構造的に防ぐため</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">topic</span>
+            <span class="meta-val">security</span>
+          </div>
+        </div>
+        <button class="doubt-btn" type="button">このclaimは怪しい</button>
+      </div>
+
+      <p>
+        意図は記録されていないことのほうが多い。だからエージェントには<strong>推論を許すかわりに出所ラベルを必須にする</strong>。
+        <span class="chip recorded">recorded</span> は PR やADRに実在する記述、
+        <span class="chip inferred">inferred</span> はコードからの推定、
+        <span class="chip unknown">unknown</span> は根拠なし。
+        推定を事実として教えないことが、この仕組みが嘘を教えないための唯一の防波堤になる。
+      </p>
+
+      <p class="pull">
+        意図が <span class="chip unknown">unknown</span> のまま残った重要claimの一覧は、それ自体が成果物になる。「誰も理由を知らないまま動いている場所」の地図だ。
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-label">storage</div>
+      <h2>知識は共有し、理解度は個人に閉じる</h2>
+    </div>
+    <p>
+      claim集合はリポジトリから採掘したチームの資産なので、コミットして共有する。
+      誰が何をわかっているかは評価につながるので、個人の手元に閉じる。この分割で、新メンバーは採掘コストを払わずに初日から学習に入れる。
+    </p>
+    <div class="layers">
+      <div class="layer shared">
+        <div class="layer-tag">committed · 共有</div>
+        <div class="layer-path">.comprehension/</div>
+        <ul>
+          <li>claim集合（本文・アンカー・意図・出所ラベル）</li>
+          <li>トピック定義と claim の所属</li>
+          <li>訂正履歴（誰がいつ何を直したか）</li>
+        </ul>
+      </div>
+      <div class="layer private">
+        <div class="layer-tag">gitignored · 個人</div>
+        <div class="layer-path">.learning/</div>
+        <ul>
+          <li>claim ID → 状態 <span class="mono">unseen / learned / stale / invalidated</span></li>
+          <li>学習した時点の commit SHA</li>
+          <li>出題と正誤の履歴</li>
+        </ul>
+      </div>
+    </div>
+    <p>
+      状態を分けたのは、<strong>「古びた」と「間違っていた」を区別する必要がある</strong>から。
+      アンカー先のコードが変われば <span class="mono">stale</span>（内容は正しかったが現状と合わない可能性）、
+      claimが訂正されれば <span class="mono">invalidated</span>（学んだ内容自体が誤りだった）。
+      後者は訂正した本人だけでなく、そのclaimを学習済みにしている全員に伝播する。
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-label">loop</div>
+      <h2>体験の一周</h2>
+    </div>
+    <p>
+      採点も抽出もエージェント自身が行う。ローカルサーバはLLMを持たない状態の受け渡し口であり、
+      この仕組みは本質的にターン制になる。
+    </p>
+    <ol class="flow">
+      <li>
+        <div class="flow-body">
+          <span class="flow-actor">agent · 初回のみ</span>
+          <span class="flow-title">全体を一度だけ重く抽出する</span>
+          <span class="flow-desc">リポジトリ全体を走査してトピックと claim集合を作り切り、コミットする。以降は差分更新のみ。一人が一度払えば、チーム全員がその上に乗る。</span>
+        </div>
+      </li>
+      <li>
+        <div class="flow-body">
+          <span class="flow-actor">code</span>
+          <span class="flow-title">起動時に陳腐化を検査する</span>
+          <span class="flow-desc">学習済みclaimのアンカー先が学習時のSHAから変更されていないかを機械的に照合し、変わっていれば stale に落とす。トピック一覧はカバレッジ付きで提示する。推定理解度は出さない。</span>
+        </div>
+      </li>
+      <li>
+        <div class="flow-body">
+          <span class="flow-actor">human</span>
+          <span class="flow-title">深めたい領域を選ぶ</span>
+          <span class="flow-desc">どこまでやれば終わりかは定義しない。カバレッジと理解度が見えていれば、次に進むかどうかは本人が決められる。</span>
+        </div>
+      </li>
+      <li>
+        <div class="flow-body">
+          <span class="flow-actor">agent → browser</span>
+          <span class="flow-title">教材を三つの形で書く</span>
+          <span class="flow-desc">claimカードの集まり（何が成り立っているか）、実行経路のツアー（それがどう繋がるか）、なぜ今の形なのかの経緯（git履歴から）。ばらばらの事実ではなく一本の線になるように。</span>
+        </div>
+      </li>
+      <li>
+        <div class="flow-body">
+          <span class="flow-actor">browser ⇄ agent</span>
+          <span class="flow-title">1問ずつ出題し、採点して次を選ぶ</span>
+          <span class="flow-desc">選択式・場所当て・記述の混合。正誤とは独立に「このclaimは怪しい」を常設し、承認ゲートを置かない代わりの訂正の入口にする。</span>
+        </div>
+      </li>
+      <li>
+        <div class="flow-body">
+          <span class="flow-actor">code</span>
+          <span class="flow-title">.learning に書き戻す</span>
+          <span class="flow-desc">状態・SHA・正誤履歴を更新し、カバレッジを再計算する。次回起動時の出発点になる。</span>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-label">responsibility</div>
+      <h2>コードが決めること、エージェントが決めること</h2>
+    </div>
+    <p>
+      判断はSkillを発動しているエージェントの能力で行い、LLM APIは呼ばない。
+      だからこそ、ぶれてはいけないものは全部コード側に置く。
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>層</th><th>担うもの</th><th>そこに置く理由</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Python</td>
+            <td class="q">claim / 学習ログのスキーマと読み書き、ローカルサーバ、HTML描画、アンカー変更の検出、カバレッジ集計、選択式と場所当ての即採点</td>
+            <td class="a">正解が確定しているものと、実行のたびに変わってはいけないもの。ここが決定的なら、エージェントの出力がぶれても記録は壊れない。</td>
+          </tr>
+          <tr>
+            <td>Agent</td>
+            <td class="q">claim抽出、意図の推定と出所判定、教材の執筆、問題の生成、記述回答の採点、claim訂正の反映</td>
+            <td class="a">コードを読んで意味を汲む必要があるもの。ここは毎回違ってよく、違うほうが学習体験としては良い。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-label">decisions</div>
+      <h2>確定した論点</h2>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>論点</th><th>決定</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>ゴール</td><td class="a">設計意図を説明できる／場所を特定できる／AI出力の異常に気づける</td></tr>
+          <tr><td>主対象</td><td class="a">既存開発者と新メンバーを同じ仕組みで扱う</td></tr>
+          <tr><td>意図の出所</td><td class="a">推論を許すが出所ラベルを必須にする</td></tr>
+          <tr><td>ログ粒度</td><td class="a">claim単位＋コードアンカー＋学習時SHA</td></tr>
+          <tr><td>共有範囲</td><td class="a">claim集合はコミット、理解度はgitignore</td></tr>
+          <tr><td>claim検証</td><td class="a">人間の承認ゲートは置かない。訂正手段を用意する</td></tr>
+          <tr><td>訂正の伝播</td><td class="a">訂正されたら全員そのclaimは再学習対象</td></tr>
+          <tr><td>完了基準</td><td class="a">定義しない。カバレッジと理解度を見せて本人が決める</td></tr>
+          <tr><td>推定理解度</td><td class="a">出さない</td></tr>
+          <tr><td>出題形式</td><td class="a">選択式・記述AI採点・場所当ての混合</td></tr>
+          <tr><td>往復単位</td><td class="a">1問ずつ</td></tr>
+          <tr><td>入出力</td><td class="a">ローカルサーバ＋ブラウザ</td></tr>
+          <tr><td>初回抽出</td><td class="a">全体を一度だけ重く</td></tr>
+          <tr><td>起動</td><td class="a">当面は手動。定期実行は別途検討</td></tr>
+          <tr><td>MVP</td><td class="a">抽出 → 選択 → 教材 → テストの1周</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-label">open</div>
+      <h2>未解決として残っているもの</h2>
+    </div>
+    <div class="risks">
+      <div class="risk-item">
+        <div class="risk-head">カバレッジ100%でも、抽出漏れは見えない</div>
+        <div class="risk-text">
+          カバレッジの分母は「エージェントが抽出できたclaim」でしかない。抽出されなかった領域は、未学習としてすら現れず、満点の画面の裏に消える。
+          unknown unknowns を減らすために作った仕組みが、新しい unknown unknown を作る構造になっている。
+          分母の信頼性を別の軸（ファイル網羅率、未claim領域の明示など）で示す必要がある。
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-head">承認ゲートなしで、claimの品質下限をどう保つか</div>
+        <div class="risk-text">
+          「怪しい」ボタンは、疑いを持てた人にしか押せない。もっともらしく間違ったclaimほど疑われずに残る。
+          抽出時にエージェント自身がどこまで自己検証するか（grepやテストで裏を取る、反例を探す）が実質的な品質の下限になる。
+        </div>
+      </div>
+      <div class="risk-item soft">
+        <div class="risk-head">1問ずつの往復はターンを消費する</div>
+        <div class="risk-text">
+          適応的な出題と引き換えに、待ち時間とコストが線形に増える。
+          選択式と場所当てはサーバ側で即採点できるので、往復が本当に必要なのは記述問題と次問の選択だけ。ここを設計で削れる余地がある。
+        </div>
+      </div>
+      <div class="risk-item soft">
+        <div class="risk-head">新メンバーの初日、数百のclaimの前でどこから始めるか</div>
+        <div class="risk-text">
+          claim集合はあるが .learning は空。推定理解度も出さない。トピック一覧だけでは入口が広すぎる。
+          既存開発者には自明な「まずここ」の順序を、共有側に何らかの形で持たせる必要があるかもしれない。
+        </div>
+      </div>
+      <div class="risk-item soft">
+        <div class="risk-head">忘却をどう扱うか</div>
+        <div class="risk-text">
+          陳腐化はコード変更で検出できるが、コードが変わらなくても人は忘れる。間隔反復を入れるかどうかは、定期実行の検討と一緒に決まる。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    debt2comp / concept v1 / 2026-08-29
+  </footer>
+
+</div>
+
+</body>
+</html>
