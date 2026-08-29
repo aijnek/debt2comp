@@ -11,7 +11,7 @@ from app import config
 from app.deps import ALL_ROLES, get_conn, require_role
 from app.money import Money
 from app.repository import audit, expenses
-from app.services import approval, submission
+from app.services import approval, payment, submission
 from app import templating
 
 router = APIRouter()
@@ -97,6 +97,8 @@ def expense_detail(
             "approvals": expenses.approvals_for(conn, expense_id),
             "history": audit.list_for(conn, "expense", expense_id),
             "can_approve": approval.can_act_on(expense, user),
+            "can_pay": payment.can_pay(expense, user),
+            "payment": expenses.payment_for(conn, expense_id),
             "money": Money,
         },
     )

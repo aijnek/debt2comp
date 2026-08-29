@@ -20,6 +20,15 @@
   </div>
 </form>
 {% endif %}
+{% if can_pay %}
+<form class="card" method="post" action="/expenses/{{ expense['id'] }}/pay">
+  <label>振込参照番号<input name="reference" required></label>
+  <button type="submit">支払う</button>
+</form>
+{% endif %}
+{% if payment %}
+<p class="muted">{{ payment['paid_at'] }} に支払い済み（参照番号 {{ payment['reference'] }}）</p>
+{% endif %}
 
 <h2>承認</h2>
 {% if approvals %}
