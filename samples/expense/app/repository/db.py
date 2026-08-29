@@ -82,7 +82,12 @@ CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipien
 
 
 def connect(path: str | None = None) -> sqlite3.Connection:
-    conn = sqlite3.connect(path or DEFAULT_DB_PATH, isolation_level=None)
+    # 接続はリクエストごとに開いて閉じるので、複数のリクエストが同じ接続を共有する
+    # ことはない。一方 FastAPI は同期の依存性とエンドポイントを別々のワーカースレッド
+    # で走らせることがあり、既定のスレッド束縛だとそれだけで落ちる。
+    conn = sqlite3.connect(
+        path or DEFAULT_DB_PATH, isolation_level=None, check_same_thread=False
+    )
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn

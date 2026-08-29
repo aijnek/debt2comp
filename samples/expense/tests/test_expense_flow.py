@@ -65,9 +65,54 @@ def test_creating_an_expense_through_the_form(as_user):
             "description": "会議の弁当",
             "incurred_on": TODAY,
         },
+        files={"receipt": ("receipt.pdf", b"%PDF-1.4 dummy", "application/pdf")},
     )
     assert response.status_code == 200
     assert "3,200 JPY" in response.text
+
+
+def test_a_receipt_is_required_above_the_threshold(as_user):
+    response = as_user(1).post(
+        "/expenses",
+        data={
+            "amount": "3,200",
+            "category": "meals",
+            "description": "会議の弁当",
+            "incurred_on": TODAY,
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "領収書" in response.text
+
+
+def test_small_expenses_need_no_receipt(as_user):
+    response = as_user(1).post(
+        "/expenses",
+        data={
+            "amount": "800",
+            "category": "meals",
+            "description": "打ち合わせのコーヒー",
+            "incurred_on": TODAY,
+        },
+    )
+    assert response.status_code == 200
+    assert "800 JPY" in response.text
+
+
+def test_an_unsupported_receipt_format_is_rejected(as_user):
+    response = as_user(1).post(
+        "/expenses",
+        data={
+            "amount": "5,000",
+            "category": "meals",
+            "description": "接待",
+            "incurred_on": TODAY,
+        },
+        files={"receipt": ("receipt.exe", b"MZ", "application/octet-stream")},
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
 
 
 def test_invalid_amount_returns_the_form_with_an_error(as_user):

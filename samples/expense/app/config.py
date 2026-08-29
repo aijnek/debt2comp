@@ -8,6 +8,9 @@ from app.money import Money
 # これを超える金額は経費精算では受け付けず、購買申請に回してもらう
 MAX_EXPENSE = Money(1_000_000)
 
+# これを超える申請には領収書の添付が要る
+RECEIPT_REQUIRED_ABOVE = Money(3_000)
+
 # これを超える申請は上長だけでなく経理の承認も要る
 TWO_STEP_THRESHOLD = Money(30_000)
 

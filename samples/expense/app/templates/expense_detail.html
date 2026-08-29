@@ -8,6 +8,7 @@
   <dt>費目</dt><dd>{{ expense['category'] }}</dd>
   <dt>用途</dt><dd>{{ expense['description'] }}</dd>
   <dt>発生日</dt><dd>{{ expense['incurred_on'] }}</dd>
+  <dt>領収書</dt><dd>{% if expense['receipt_name'] %}<a href="/expenses/{{ expense['id'] }}/receipt">添付あり</a>{% else %}<span class="muted">なし</span>{% endif %}</dd>
   <dt>状態</dt><dd><span class="status {{ expense['status'] }}">{{ expense['status'] }}</span></dd>
 </dl>
 
