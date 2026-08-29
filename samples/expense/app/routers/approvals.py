@@ -26,7 +26,7 @@ def pending(
         conn,
         user,
         "approvals.html",
-        {"expenses": approval.pending_expenses(conn), "money": Money},
+        {"expenses": approval.pending_for(conn, user), "money": Money},
     )
 
 

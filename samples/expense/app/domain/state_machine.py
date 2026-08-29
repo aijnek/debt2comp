@@ -8,14 +8,16 @@ status を書き換えたい箇所は必ずこの transition() を通す。許�
 from __future__ import annotations
 
 SUBMITTED = "submitted"
+PARTIALLY_APPROVED = "partially_approved"
 APPROVED = "approved"
 REJECTED = "rejected"
 PAID = "paid"
 
-STATUSES = (SUBMITTED, APPROVED, REJECTED, PAID)
+STATUSES = (SUBMITTED, PARTIALLY_APPROVED, APPROVED, REJECTED, PAID)
 
 _ALLOWED: dict[str, frozenset[str]] = {
-    SUBMITTED: frozenset({APPROVED, REJECTED}),
+    SUBMITTED: frozenset({PARTIALLY_APPROVED, APPROVED, REJECTED}),
+    PARTIALLY_APPROVED: frozenset({APPROVED, REJECTED}),
     APPROVED: frozenset({PAID}),
     REJECTED: frozenset(),
     PAID: frozenset(),

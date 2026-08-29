@@ -29,6 +29,25 @@ def test_approval_moves_the_expense_forward(conn):
     assert expenses.get(conn, expense_id)["status"] == state_machine.APPROVED
 
 
+def test_expensive_expenses_need_a_second_approval(conn):
+    expense_id = submit(conn, amount=80000)
+
+    approval.approve(conn, expense_id=expense_id, approver_id=3)
+    assert expenses.get(conn, expense_id)["status"] == state_machine.PARTIALLY_APPROVED
+
+    approval.approve(conn, expense_id=expense_id, approver_id=4)
+    assert expenses.get(conn, expense_id)["status"] == state_machine.APPROVED
+
+
+def test_the_second_step_needs_the_finance_role(conn, as_user):
+    expense_id = submit(conn, amount=80000)
+    approval.approve(conn, expense_id=expense_id, approver_id=3)
+
+    response = as_user(7).post(f"/expenses/{expense_id}/approve", data={"comment": ""})
+    assert response.status_code == 400
+    assert expenses.get(conn, expense_id)["status"] == state_machine.PARTIALLY_APPROVED
+
+
 def test_rejection_is_terminal(conn):
     expense_id = submit(conn)
     approval.reject(conn, expense_id=expense_id, approver_id=3, comment="領収書なし")
@@ -56,3 +75,11 @@ def test_employees_cannot_approve_through_the_endpoint(as_user, conn):
     response = as_user(2).post(f"/expenses/{expense_id}/approve", data={"comment": ""})
     assert response.status_code == 403
     assert expenses.get(conn, expense_id)["status"] == state_machine.SUBMITTED
+
+
+def test_a_fully_approved_expense_cannot_be_rejected(conn):
+    expense_id = submit(conn, amount=80000)
+    approval.approve(conn, expense_id=expense_id, approver_id=3)
+    approval.approve(conn, expense_id=expense_id, approver_id=4)
+    with pytest.raises(state_machine.TransitionError):
+        approval.reject(conn, expense_id=expense_id, approver_id=4)

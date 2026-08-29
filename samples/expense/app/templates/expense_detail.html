@@ -31,6 +31,7 @@
 {% endif %}
 
 <h2>承認</h2>
+<p class="muted">{{ progress[0] }} / {{ progress[1] }} 段完了</p>
 {% if approvals %}
 <ol class="steps">
   {% for a in approvals %}
