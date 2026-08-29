@@ -14,16 +14,20 @@ from app.money import Money
 STEP_ROLES: dict[int, str] = {
     1: "manager",
     2: "finance",
+    3: "admin",
 }
 
 STEP_LABELS: dict[int, str] = {
     1: "一次（上長）",
     2: "二次（経理）",
+    3: "三次（管理部門）",
 }
 
 
 def required_steps(amount: Money) -> int:
     """この金額の申請に必要な承認段数を返す。"""
+    if amount > config.THREE_STEP_THRESHOLD:
+        return 3
     if amount > config.TWO_STEP_THRESHOLD:
         return 2
     return 1

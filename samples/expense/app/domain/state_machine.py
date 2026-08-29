@@ -17,7 +17,8 @@ STATUSES = (SUBMITTED, PARTIALLY_APPROVED, APPROVED, REJECTED, PAID)
 
 _ALLOWED: dict[str, frozenset[str]] = {
     SUBMITTED: frozenset({PARTIALLY_APPROVED, APPROVED, REJECTED}),
-    PARTIALLY_APPROVED: frozenset({APPROVED, REJECTED}),
+    # 3段承認の2段目を通った直後も同じ状態に留まる
+    PARTIALLY_APPROVED: frozenset({PARTIALLY_APPROVED, APPROVED, REJECTED}),
     APPROVED: frozenset({PAID}),
     REJECTED: frozenset(),
     PAID: frozenset(),

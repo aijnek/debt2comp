@@ -83,3 +83,16 @@ def test_a_fully_approved_expense_cannot_be_rejected(conn):
     approval.approve(conn, expense_id=expense_id, approver_id=4)
     with pytest.raises(state_machine.TransitionError):
         approval.reject(conn, expense_id=expense_id, approver_id=4)
+
+
+def test_very_large_expenses_need_three_approvals(conn):
+    expense_id = submit(conn, amount=400000)
+
+    approval.approve(conn, expense_id=expense_id, approver_id=3)
+    assert expenses.get(conn, expense_id)["status"] == state_machine.PARTIALLY_APPROVED
+
+    approval.approve(conn, expense_id=expense_id, approver_id=4)
+    assert expenses.get(conn, expense_id)["status"] == state_machine.PARTIALLY_APPROVED
+
+    approval.approve(conn, expense_id=expense_id, approver_id=5)
+    assert expenses.get(conn, expense_id)["status"] == state_machine.APPROVED

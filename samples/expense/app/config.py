@@ -11,6 +11,9 @@ MAX_EXPENSE = Money(1_000_000)
 # これを超える申請は上長だけでなく経理の承認も要る
 TWO_STEP_THRESHOLD = Money(30_000)
 
+# これを超える申請は管理部門の承認も要る
+THREE_STEP_THRESHOLD = Money(300_000)
+
 # 発生日がこれより古い申請は受け付けない（決算をまたぐ遡及を防ぐ）
 MAX_BACKDATE_DAYS = 90
 
